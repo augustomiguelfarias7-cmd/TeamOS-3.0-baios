@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(Baios VERSION 3.0.0 LANGUAGES C CXX ASM)
+project(baios VERSION 3.0.0 LANGUAGES C CXX)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -7,41 +7,31 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -O2 -g)
+add_definitions(-DBAIOS_DEBUG=1)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-set(BAIOS_C_SOURCES
-    ipc/shared_memory.c
-    ipc/zero_copy.c
-    hw/memory.c
-    hw/interrupts.c
-    hw/power.c
-    hw/linux_compat.c
-    hw/main.c
-    common/utils.c
-    demo_main.c
+set(BAIOS_SOURCES
+    src/hw/phys_memory.c
+    src/hw/interrupt.c
+    src/hw/driver_compat.c
+    src/hw/hw_kernel.c
+    src/ipc/zero_copy.c
+    src/sw/process_manager.c
+    src/sw/sw_kernel.cpp
+    src/boot/entry.c
 )
 
-set(BAIOS_CXX_SOURCES
-    sw/process_manager.cpp
-    sw/filesystem.cpp
-    sw/permissions.cpp
-    sw/ipc_bridge.cpp
-    sw/services/audio.cpp
-    sw/services/network.cpp
-    sw/services/render.cpp
-    sw/main.cpp
+add_executable(baios_stub ${BAIOS_SOURCES})
+target_link_libraries(baios_stub pthread)
+
+add_library(baios STATIC
+    src/hw/phys_memory.c
+    src/hw/interrupt.c
+    src/hw/driver_compat.c
+    src/hw/hw_kernel.c
+    src/ipc/zero_copy.c
+    src/sw/process_manager.c
+    src/sw/sw_kernel.cpp
 )
-
-set(BAIOS_ASM_SOURCES
-    hw/entry.S
-)
-
-add_executable(baios_demo
-    ${BAIOS_C_SOURCES}
-    ${BAIOS_CXX_SOURCES}
-    ${BAIOS_ASM_SOURCES}
-)
-
-target_link_libraries(baios_demo PRIVATE pthread rt)
-
-install(TARGETS baios_demo DESTINATION bin)
+target_include_directories(baios PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
