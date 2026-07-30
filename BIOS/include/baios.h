@@ -1,75 +1,69 @@
+/**
+ * @file baios.h
+ * @brief Header principal público do Dual Microkernel Baios
+ */
 #ifndef BAIOS_H
 #define BAIOS_H
 
-/**
- * Baios — Dual Microkernel do TeamOS 3.0
- *
- * Header principal. Inclui todos os módulos públicos.
- */
-
 #include "types.h"
-#include "memory.h"
-#include "ipc.h"
-#include "hw_kernel.h"
-#include "sw_kernel.h"
-#include "interrupts.h"
-#include "drivers.h"
-#include "permissions.h"
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Versão do kernel */
-#define BAIOS_VERSION_MAJOR   3
-#define BAIOS_VERSION_MINOR   0
-#define BAIOS_VERSION_PATCH   0
-#define BAIOS_VERSION_STRING  "3.0.0-baios"
+/* ============================================================
+ * Inicialização global
+ * ============================================================ */
 
-/* Informações de build */
-typedef struct {
-    u32 major;
-    u32 minor;
-    u32 patch;
-    const char *version_string;
-    const char *build_date;
-    const char *build_time;
-    bool dual_microkernel;
-    bool zero_copy_ipc;
-    bool linux_compat;
-} baios_version_info_t;
+/**
+ * Inicializa todo o dual microkernel.
+ * Deve ser chamado uma única vez no boot.
+ */
+baios_status_t baios_init(void);
 
-const baios_version_info_t *baios_get_version(void);
+/**
+ * Encerra o kernel de forma controlada (shutdown).
+ */
+baios_status_t baios_shutdown(void);
 
-/* Inicialização global do Baios */
-baios_error_t baios_init(void);
-void          baios_shutdown(void);
+/**
+ * Retorna string de versão.
+ */
+const char *baios_version(void);
 
-/* Heartbeat / watchdog entre os dois microkernels */
-typedef struct {
-    u64 hw_heartbeat;
-    u64 sw_heartbeat;
-    u64 last_sync_ns;
-    bool hw_alive;
-    bool sw_alive;
-} baios_health_t;
+/* ============================================================
+ * Estado do kernel
+ * ============================================================ */
+typedef enum {
+    BAIOS_STATE_UNINITIALIZED = 0,
+    BAIOS_STATE_HW_INIT,
+    BAIOS_STATE_SW_INIT,
+    BAIOS_STATE_RUNNING,
+    BAIOS_STATE_PANIC,
+    BAIOS_STATE_SHUTDOWN,
+} baios_state_t;
 
-baios_error_t baios_health_check(baios_health_t *out);
+baios_state_t baios_get_state(void);
 
-/* Estatísticas globais */
-typedef struct {
-    u64 uptime_ns;
-    u64 total_syscalls;
-    u64 total_ipc_messages;
-    u64 total_page_faults;
-    u64 total_interrupts;
-    u64 memory_used_bytes;
-    u64 memory_total_bytes;
-    u32 process_count;
-    u32 thread_count;
-} baios_stats_t;
+/* ============================================================
+ * Logging mínimo (stub para ambiente host)
+ * ============================================================ */
+typedef enum {
+    BAIOS_LOG_TRACE = 0,
+    BAIOS_LOG_DEBUG,
+    BAIOS_LOG_INFO,
+    BAIOS_LOG_WARN,
+    BAIOS_LOG_ERROR,
+    BAIOS_LOG_FATAL,
+} baios_log_level_t;
 
-baios_error_t baios_get_stats(baios_stats_t *out);
+void baios_log(baios_log_level_t level, const char *fmt, ...);
+
+#define BAIOS_LOG_INFO(...)  baios_log(BAIOS_LOG_INFO,  __VA_ARGS__)
+#define BAIOS_LOG_WARN(...)  baios_log(BAIOS_LOG_WARN,  __VA_ARGS__)
+#define BAIOS_LOG_ERROR(...) baios_log(BAIOS_LOG_ERROR, __VA_ARGS__)
+#define BAIOS_LOG_DEBUG(...) baios_log(BAIOS_LOG_DEBUG, __VA_ARGS__)
 
 #ifdef __cplusplus
 }

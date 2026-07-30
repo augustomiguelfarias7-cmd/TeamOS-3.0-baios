@@ -1,3 +1,7 @@
+/**
+ * @file types.h
+ * @brief Tipos fundamentais do Baios Dual Microkernel
+ */
 #ifndef BAIOS_TYPES_H
 #define BAIOS_TYPES_H
 
@@ -9,7 +13,9 @@
 extern "C" {
 #endif
 
-/* Tipos básicos do Baios */
+/* ============================================================
+ * Tipos inteiros padrão
+ * ============================================================ */
 typedef uint8_t   u8;
 typedef uint16_t  u16;
 typedef uint32_t  u32;
@@ -19,78 +25,91 @@ typedef int16_t   i16;
 typedef int32_t   i32;
 typedef int64_t   i64;
 
-typedef uintptr_t baios_addr_t;
-typedef size_t    baios_size_t;
-typedef int32_t   baios_error_t;
-typedef uint32_t  baios_pid_t;
-typedef uint32_t  baios_uid_t;
-typedef uint64_t  baios_handle_t;
+typedef uintptr_t uptr;
+typedef size_t    usize;
+typedef ptrdiff_t isize;
 
-/* Códigos de erro padrão */
-#define BAIOS_OK                 0
-#define BAIOS_ERR_INVALID_ARG   -1
-#define BAIOS_ERR_NO_MEMORY     -2
-#define BAIOS_ERR_PERMISSION    -3
-#define BAIOS_ERR_NOT_FOUND     -4
-#define BAIOS_ERR_BUSY          -5
-#define BAIOS_ERR_TIMEOUT       -6
-#define BAIOS_ERR_IO            -7
-#define BAIOS_ERR_NOT_SUPPORTED -8
-#define BAIOS_ERR_IPC           -9
-#define BAIOS_ERR_ALREADY_EXISTS -10
-#define BAIOS_ERR_OVERFLOW      -11
-#define BAIOS_ERR_UNDERFLOW     -12
-#define BAIOS_ERR_CORRUPT       -13
+/* ============================================================
+ * Resultados e erros
+ * ============================================================ */
+typedef enum {
+    BAIOS_OK                =  0,
+    BAIOS_ERR_NOMEM         = -1,
+    BAIOS_ERR_INVAL         = -2,
+    BAIOS_ERR_PERM          = -3,
+    BAIOS_ERR_NOTFOUND      = -4,
+    BAIOS_ERR_BUSY          = -5,
+    BAIOS_ERR_IO            = -6,
+    BAIOS_ERR_TIMEOUT       = -7,
+    BAIOS_ERR_AGAIN         = -8,
+    BAIOS_ERR_NOSYS         = -9,
+    BAIOS_ERR_FAULT         = -10,
+    BAIOS_ERR_OVERFLOW      = -11,
+    BAIOS_ERR_UNDERFLOW     = -12,
+    BAIOS_ERR_IPC           = -13,
+    BAIOS_ERR_DRIVER        = -14,
+    BAIOS_ERR_STATE         = -15,
+} baios_status_t;
 
-/* Alinhamento e páginas */
-#define BAIOS_PAGE_SIZE         4096ULL
-#define BAIOS_PAGE_SHIFT        12
-#define BAIOS_PAGE_MASK         (~(BAIOS_PAGE_SIZE - 1))
+static inline const char *baios_status_str(baios_status_t s) {
+    switch (s) {
+        case BAIOS_OK:           return "OK";
+        case BAIOS_ERR_NOMEM:    return "Out of memory";
+        case BAIOS_ERR_INVAL:    return "Invalid argument";
+        case BAIOS_ERR_PERM:     return "Permission denied";
+        case BAIOS_ERR_NOTFOUND: return "Not found";
+        case BAIOS_ERR_BUSY:     return "Resource busy";
+        case BAIOS_ERR_IO:       return "I/O error";
+        case BAIOS_ERR_TIMEOUT:  return "Timeout";
+        case BAIOS_ERR_AGAIN:    return "Try again";
+        case BAIOS_ERR_NOSYS:    return "Not implemented";
+        case BAIOS_ERR_FAULT:    return "Bad address";
+        case BAIOS_ERR_OVERFLOW: return "Overflow";
+        case BAIOS_ERR_UNDERFLOW:return "Underflow";
+        case BAIOS_ERR_IPC:      return "IPC error";
+        case BAIOS_ERR_DRIVER:   return "Driver error";
+        case BAIOS_ERR_STATE:    return "Invalid state";
+        default:                 return "Unknown error";
+    }
+}
 
-#define BAIOS_ALIGN_UP(x, a)    (((x) + ((a) - 1)) & ~((a) - 1))
-#define BAIOS_ALIGN_DOWN(x, a)  ((x) & ~((a) - 1))
-#define BAIOS_IS_ALIGNED(x, a)  (((x) & ((a) - 1)) == 0)
+/* ============================================================
+ * Identificadores
+ * ============================================================ */
+typedef u32 baios_pid_t;
+typedef u32 baios_tid_t;
+typedef u64 baios_handle_t;
+typedef u64 baios_cap_t;          /* Capability token */
 
-/* Flags de memória */
-#define BAIOS_MEM_READ          (1u << 0)
-#define BAIOS_MEM_WRITE         (1u << 1)
-#define BAIOS_MEM_EXEC          (1u << 2)
-#define BAIOS_MEM_SHARED        (1u << 3)
-#define BAIOS_MEM_USER          (1u << 4)
-#define BAIOS_MEM_KERNEL        (1u << 5)
-#define BAIOS_MEM_DEVICE        (1u << 6)
-#define BAIOS_MEM_ZERO_COPY     (1u << 7)
+#define BAIOS_INVALID_PID     ((baios_pid_t)0)
+#define BAIOS_INVALID_HANDLE  ((baios_handle_t)0)
+#define BAIOS_INVALID_CAP     ((baios_cap_t)0)
 
-/* Prioridades de processo */
+/* ============================================================
+ * Prioridades e flags
+ * ============================================================ */
 typedef enum {
     BAIOS_PRIO_IDLE       = 0,
     BAIOS_PRIO_LOW        = 1,
     BAIOS_PRIO_NORMAL     = 2,
     BAIOS_PRIO_HIGH       = 3,
     BAIOS_PRIO_REALTIME   = 4,
-    BAIOS_PRIO_KERNEL     = 5
-} baios_priority_t;
+    BAIOS_PRIO_KERNEL     = 5,
+} baios_prio_t;
 
-/* Estados de processo */
-typedef enum {
-    BAIOS_PROC_CREATED    = 0,
-    BAIOS_PROC_READY      = 1,
-    BAIOS_PROC_RUNNING    = 2,
-    BAIOS_PROC_BLOCKED    = 3,
-    BAIOS_PROC_SLEEPING   = 4,
-    BAIOS_PROC_ZOMBIE     = 5,
-    BAIOS_PROC_TERMINATED = 6
-} baios_proc_state_t;
+/* ============================================================
+ * Alinhamento e utilitários
+ * ============================================================ */
+#define BAIOS_ALIGN_UP(x, a)   (((x) + ((a) - 1)) & ~((a) - 1))
+#define BAIOS_ALIGN_DOWN(x, a) ((x) & ~((a) - 1))
+#define BAIOS_IS_ALIGNED(x, a) (((x) & ((a) - 1)) == 0)
 
-/* Tipos de mensagem IPC */
-typedef enum {
-    BAIOS_IPC_REQUEST     = 0,
-    BAIOS_IPC_RESPONSE    = 1,
-    BAIOS_IPC_NOTIFY      = 2,
-    BAIOS_IPC_SIGNAL      = 3,
-    BAIOS_IPC_DMA         = 4,
-    BAIOS_IPC_CONTROL     = 5
-} baios_ipc_type_t;
+#define BAIOS_MIN(a, b) ((a) < (b) ? (a) : (b))
+#define BAIOS_MAX(a, b) ((a) > (b) ? (a) : (b))
+
+#define BAIOS_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+#define BAIOS_UNUSED(x) ((void)(x))
 
 #ifdef __cplusplus
 }

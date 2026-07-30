@@ -1,38 +1,37 @@
 # Baios — Dual Microkernel do TeamOS 3.0
 
-**Baios** (BIOS folder) é o kernel de alto nível do TeamOS 3.0.
+**Baios** (Baios Advanced Interface Operating System core) é o kernel de alto nível do TeamOS 3.0.
 
-## Arquitetura
+Arquitetura: **Duplo Microkernel** com comunicação Zero-Copy via memória compartilhada.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Aplicações / Apps                        │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ Syscalls / Requests
-┌──────────────────────────▼──────────────────────────────────┐
-│              Software Microkernel (C++)                     │
-│  Process Manager • Filesystem • Permissions • Services      │
-│  (Audio / Network / Render)                                 │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ Zero-Copy IPC (Shared Memory)
-┌──────────────────────────▼──────────────────────────────────┐
-│              Hardware Microkernel (C + Assembly)            │
-│  Memory • Interrupts • Power • Linux Driver Compat Layer    │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
+│                    Aplicações (User Space)                  │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ Syscalls
+┌───────────────────────────▼─────────────────────────────────┐
+│              Microkernel de Software (C++)                  │
+│  • Process Manager  • Permissions  • VFS  • IPC Router      │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ Zero-Copy Shared Memory Ring
+┌───────────────────────────▼─────────────────────────────────┐
+│              Microkernel de Hardware (C)                    │
+│  • Phys Memory  • Interrupts  • Driver Compat (Linux)       │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
                     Hardware / Linux Drivers
 ```
 
-## Estrutura de Pastas
+## Estrutura
 
 ```
 BIOS/
-├── include/          # Headers públicos
-├── hw/               # Microkernel de Hardware (C + ASM)
-├── sw/               # Microkernel de Software (C++)
-│   └── services/     # Serviços de alto nível
-├── ipc/              # Zero-Copy IPC e Shared Memory
-├── common/           # Utilitários compartilhados
+├── include/          # Headers públicos e internos
+├── src/
+│   ├── hw/           # Microkernel de Hardware (C)
+│   ├── sw/           # Microkernel de Software (C++)
+│   ├── ipc/          # Zero-Copy IPC
+│   └── boot/         # Entry point e bootstrap
 ├── Makefile
 └── CMakeLists.txt
 ```
@@ -41,12 +40,22 @@ BIOS/
 
 ```bash
 cd BIOS
-make          # ou cmake -B build && cmake --build build
+make          # gera libbaios.a e baios_stub
+# ou
+mkdir build && cd build && cmake .. && make
 ```
 
-## Princípios
+## Status
 
-- Isolamento de falhas entre os dois microkernels
-- Comunicação exclusivamente via Zero-Copy IPC
-- Reaproveitamento de drivers Linux através de camada de compatibilidade
-- Aplicações nunca tocam hardware diretamente
+- [x] Estrutura dual microkernel
+- [x] Zero-Copy ring buffer IPC
+- [x] Memory manager físico (buddy-like)
+- [x] Interrupt framework
+- [x] Driver compatibility layer (Linux-style)
+- [x] Process & permission manager
+- [x] VFS esqueleto
+- [ ] Boot real em hardware / QEMU
+- [ ] Drivers reais
+- [ ] Userspace completo
+
+Licença: Apache 2.0 (mesmo do repositório raiz).
