@@ -1,0 +1,11 @@
+*.o
+*.a
+*.so
+baios_demo
+build/
+.cmake/
+CMakeCache.txt
+CMakeFiles/
+*.user
+*.swp
+*~
