@@ -41,6 +41,7 @@ void hw_kernel_tick(void);
 u64  hw_kernel_get_heartbeat(void);
 
 /* Memory (lado hardware) */
+baios_error_t hw_mem_init_buddy(baios_addr_t base, baios_size_t size);
 baios_error_t hw_mem_alloc_pages(u32 order, baios_addr_t *out_phys);
 baios_error_t hw_mem_free_pages(baios_addr_t phys, u32 order);
 baios_error_t hw_mem_map_physical(baios_addr_t phys, baios_size_t size,

@@ -17,7 +17,7 @@ baios_error_t sw_ipc_send_to_hw(u32 opcode, const void *data, baios_size_t len) 
 
 baios_error_t sw_ipc_notify_event(u32 event_code, const void *data, baios_size_t len) {
     baios_ipc_header_t hdr = {};
-    hdr.type   = BAIOS_IPC_EVENT;
+    hdr.type   = BAIOS_IPC_NOTIFY;
     hdr.src_id = BAIOS_SW_KERNEL_ID;
     hdr.dst_id = BAIOS_HW_KERNEL_ID;
     hdr.opcode = event_code;
